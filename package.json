@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "mediasource": "^2.4.0",
     "puppeteer": "^11.0.0",
     "wrtc": "^0.4.7",
     "ws": "^8.2.3"
