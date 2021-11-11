@@ -16,7 +16,7 @@ var handleLogin = () => {
   // 1. Lấy stream ra từ camera
   navigator.mediaDevices
     .getDisplayMedia({
-      video: { width: 3840, height: 2096, frameRate: 60 },
+      video: {frameRate: 40, resizeMode: "none", cursor: "motion", width: {ideal: 4096}, height: {ideal: 2160} },
       audio: true,
     })
     .then((stream) => {
@@ -46,7 +46,6 @@ var handleLogin = () => {
 
       myConnection.createOffer()
       .then(offer => {
-          console.log("Offer sẵn sàng");
         send("offer", offer);
         myConnection.setLocalDescription(offer);
       })
@@ -58,7 +57,6 @@ var handleLogin = () => {
       // 6. Khi đã nhận đủ answer, nắm đủ thông tin về đầu bên kia rồi,
       // thì tạo candidate, trigger event icecandidate để tạo kết nối send dữ liệu
       myConnection.onicecandidate = (event) => {
-          console.log("Candidate sẵn sàng");
         if (event.candidate) send("candidate", event.candidate);
       };
     });

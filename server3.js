@@ -153,8 +153,8 @@ function sendTo(connection, message) {
   // const doc = await page.$('document');
 
   await page.setViewport({
-    width: 1366,
-    height: 768,
+    width: 1920,
+    height: 1080,
   });
 
   await page.goto(url);
@@ -164,3 +164,4 @@ function sendTo(connection, message) {
 function sendTo(connection, message) {
   connection.send(JSON.stringify(message));
 }
+ 
