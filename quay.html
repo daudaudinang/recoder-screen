@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button>Click to quay</button>
+    <video autoplay></video>
+    <script>
+      var conn = new WebSocket("ws://localhost:9090");
+      var myConnection;
+      document.querySelector("button").onclick = () => {
+        conn.onopen = function () {
+          console.log("Connected to the signaling server");
+        };
+
+        // Function để send data sang cho server
+        function send(type, data) {
+          conn.send(JSON.stringify({ type: type, data: data }));
+        }
+
+        // Login
+        send("login", "camera");
+
+        var handleLogin = () => {
+          // 1. Lấy stream ra từ camera
+          navigator.getUserMedia(
+            { video: true },
+            (stream) => {
+              console.log(stream);
+
+              //using Google public stun server
+              var configuration = {
+                iceServers: [
+                  { urls: "stun:stun2.1.google.com:19302" },
+                  {
+                    urls: "turn:192.158.29.39:3478?transport=udp",
+                    credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+                    username: "28224511:1379330808",
+                  },
+                  {
+                    urls: "turn:192.158.29.39:3478?transport=tcp",
+                    credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+                    username: "28224511:1379330808",
+                  },
+                ],
+              };
+
+              // 2. Tạo Peer Connection Object
+              myConnection = new RTCPeerConnection(configuration);
+
+              // 3. Add stream để chuyển sang cho thằng player
+              stream.getTracks().forEach((track) => {
+                myConnection.addTrack(track, stream);
+              });
+
+              document.querySelector("video").srcObject = stream;
+              // 4. Tạo offer để send cho server, nhờ nó gửi cho player
+
+              myConnection.createOffer(
+                (offer) => {
+                  send("offer", offer);
+
+                  myConnection.setLocalDescription(offer);
+                },
+                function (error) {
+                  // alert("Error when creating an offer");
+                  console.log(error);
+                }
+              );
+
+              // 6. Khi đã nhận đủ answer, nắm đủ thông tin về đầu bên kia rồi,
+              // thì tạo candidate, trigger event icecandidate để tạo kết nối send dữ liệu
+              myConnection.onicecandidate = (event) => {
+                if (event.candidate) send("candidate", event.candidate);
+              };
+            },
+            (error) => console.log(error)
+          );
+        };
+
+        // Xử lý sự kiện khi nhận được thông tin của thằng player gửi cho từ Server
+        conn.onmessage = (message) => {
+          message = JSON.parse(message.data);
+          console.log("Got message from Server", message);
+          // 5. Sau khi send Offer cho player, nó sẽ gửi cho mình 1 answer, mình sẽ nhận về và gán nó vào remote Description của mình
+          // Sau khi thực hiện xong cái này, nó đã có đủ dữ liệu để thực hiện kết nối
+          // Nên nó trigger ra event icecandidate để mình lấy candidate gửi cho server như số 6 ở trên
+          if (message.type === "login" && message.data === true) {
+            handleLogin();
+          }
+
+          if (message.type === "answer") {
+            myConnection.setRemoteDescription(
+              new RTCSessionDescription(message.data)
+            );
+          }
+
+          if (message.type === "candidate") {
+            myConnection.addIceCandidate(new RTCIceCandidate(message.data));
+          }
+        };
+      };
+    </script>
+  </body>
+</html>

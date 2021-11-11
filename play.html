@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <video id="remoteVideo" autoplay muted></video>
+    <script>
+      window.onload = () => {
+        var conn = new WebSocket("ws://localhost:9090");
+        var myConnection;
+        conn.onopen = function () {
+          console.log("Connected to the signaling server");
+          // Function để send data sang cho server
+          function send(type, data) {
+            conn.send(JSON.stringify({ type: type, data: data }));
+          }
+
+          // Login
+          send("login", "player");
+
+          var handleLogin = () => {
+            console.log("Login thành công, hố hố hố");
+          };
+
+          // Xử lý sự kiện khi nhận được thông tin của thằng player gửi cho từ Server
+          conn.onmessage = (message) => {
+            message = JSON.parse(message.data);
+            console.log("Got message from Server", message);
+            // 5. Sau khi send Offer cho player, nó sẽ gửi cho mình 1 answer, mình sẽ nhận về và gán nó vào remote Description của mình
+            // Sau khi thực hiện xong cái này, nó đã có đủ dữ liệu để thực hiện kết nối
+            // Nên nó trigger ra event icecandidate để mình lấy candidate gửi cho server như số 6 ở trên
+            if (message.type === "login" && message.data === true) {
+              handleLogin();
+            }
+
+            // Nhận offer từ camera
+            if (message.type === "offer") {
+
+              // Nhận đc offer rồi thì tạo peer connection
+              //using Google public stun server
+              var configuration = {
+                iceServers: [
+                  { urls: "stun:stun2.1.google.com:19302" },
+                  {
+                    urls: "turn:192.158.29.39:3478?transport=udp",
+                    credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+                    username: "28224511:1379330808",
+                  },
+                  {
+                    urls: "turn:192.158.29.39:3478?transport=tcp",
+                    credential: "JZEOEt2V3Qb0y27GRntt2u2PAYA=",
+                    username: "28224511:1379330808",
+                  },
+                ],
+              };
+
+              // Tạo Peer Connection Object
+              myConnection = new RTCPeerConnection(configuration);
+
+              // Sau khi trao đổi xong candidate, sẽ bắt đầu thực hiện truyền stream luôn.
+              // Nên ta phải tạo trước 1 event để thực thi event khi nó xảy ra
+              myConnection.ontrack = (event) => {
+                document.querySelector("#remoteVideo").srcObject = event.streams[0];
+              };
+
+              // Khi nhận được 1 offer từ camera, lưu nó vào Remote Description và trả về cho nó 1 answer
+              myConnection.setRemoteDescription(
+                new RTCSessionDescription(message.data)
+              );
+
+              //create an answer và send nó
+              myConnection.createAnswer(
+                (answer) => {
+                  // set answer vào local Description
+                  myConnection.setLocalDescription(answer);
+
+                  send("answer",answer);
+                },
+                function (error) {
+                  // alert("Error when creating an offer");
+                  console.log(error);
+                }
+              );
+            }
+
+            if (message.type === "candidate") {
+              myConnection.addIceCandidate(new RTCIceCandidate(message.data));
+            }
+          };
+        };
+      };
+    </script>
+  </body>
+</html>
