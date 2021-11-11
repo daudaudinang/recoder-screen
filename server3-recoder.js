@@ -4,7 +4,6 @@ document.title = "webclip";
 
 // Function để send data sang cho server
 function send(type, data) {
-    console.log(type);
     conn.send(JSON.stringify({ type: type, data: data }));
 }
 
@@ -17,7 +16,7 @@ var handleLogin = () => {
   // 1. Lấy stream ra từ camera
   navigator.mediaDevices
     .getDisplayMedia({
-      video: true,
+      video: { width: 3840, height: 2096, frameRate: 60 },
       audio: true,
     })
     .then((stream) => {
@@ -42,21 +41,19 @@ var handleLogin = () => {
       myConnection = new RTCPeerConnection(configuration);
 
       stream.getTracks().forEach((track) => {
-          console.log("Ok track", track);
         myConnection.addTrack(track, stream);
       });
 
-      myConnection.createOffer(
-        (offer) => {
-            console.log("Offer sẵn sàng");
-          send("offer", offer);
-          myConnection.setLocalDescription(offer);
-        },
-        function (error) {
-          // alert("Error when creating an offer");
-          console.log(error);
-        }
-      );
+      myConnection.createOffer()
+      .then(offer => {
+          console.log("Offer sẵn sàng");
+        send("offer", offer);
+        myConnection.setLocalDescription(offer);
+      })
+      .catch (error => {
+        // alert("Error when creating an offer");
+        console.log(error);
+      });
 
       // 6. Khi đã nhận đủ answer, nắm đủ thông tin về đầu bên kia rồi,
       // thì tạo candidate, trigger event icecandidate để tạo kết nối send dữ liệu
@@ -70,7 +67,6 @@ var handleLogin = () => {
 // Xử lý sự kiện khi nhận được thông tin của thằng player gửi cho từ Server
 conn.onmessage = (message) => {
   message = JSON.parse(message.data);
-  console.log("Got message from Server", message);
   // 5. Sau khi send Offer cho player, nó sẽ gửi cho mình 1 answer, mình sẽ nhận về và gán nó vào remote Description của mình
   // Sau khi thực hiện xong cái này, nó đã có đủ dữ liệu để thực hiện kết nối
   // Nên nó trigger ra event icecandidate để mình lấy candidate gửi cho server như số 6 ở trên

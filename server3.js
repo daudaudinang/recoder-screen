@@ -76,11 +76,9 @@ wss.on("connection", (connection) => {
             myConnection2.addTrack(track, event.streams[0]);
           });
 
-          if (users.player) {
-            setInterval(() => {
-            console.log(myConnection2.connectionState);
-              if (myConnection2.connectionState === "new") {
-                  console.log("ok")
+          setInterval(() => {
+            if (users.player && myConnection2.connectionState === "new") {
+              console.log(myConnection2.connectionState);
                 myConnection2
                   .createOffer()
                   .then((offer) => {
@@ -94,9 +92,8 @@ wss.on("connection", (connection) => {
                   .catch((error) => {
                     console.log(error);
                   });
-              }
-            }, 5000);
-          }
+            }
+          }, 5000);
 
           // Khi đã nhận đủ answer, nắm đủ thông tin về đầu bên kia rồi,
           // thì tạo candidate, trigger event icecandidate để tạo kết nối send dữ liệu
@@ -130,7 +127,6 @@ wss.on("connection", (connection) => {
   });
 });
 
-// Giữ nguyên
 function sendTo(connection, message) {
   console.log("Sent", message.type);
   connection.send(JSON.stringify(message));
@@ -154,9 +150,11 @@ function sendTo(connection, message) {
 
   const page = await browser.newPage();
 
+  // const doc = await page.$('document');
+
   await page.setViewport({
-    width: 1920,
-    height: 1080,
+    width: 1366,
+    height: 768,
   });
 
   await page.goto(url);
