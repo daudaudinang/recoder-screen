@@ -20,7 +20,6 @@ server3.js + server3-recoder.js + play.html: Dùng pupperteer truy cập 1 trang
 #2 *headless bắt buộc phải set thành false, nếu set thành true thì sẽ không lấy được source
 #3 *Có thể tăng, giảm chất lượng video hay số frame/s bằng cách set constraints cho getDisplayMedia()
 # Ví dụ:
-navigator.mediaDevices.getDisplayMedia(constraints);
 navigator.mediaDevices.getDisplayMedia({
 video: {
         width: 160,
